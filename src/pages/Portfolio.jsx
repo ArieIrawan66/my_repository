@@ -9,21 +9,15 @@ const project1 = '../assets/programming/project1.jpg'; // Placeholder for progra
 
 // Physics constants
 const FRICTION = 0.95;
-const VELOCITY_CUTOFF = 0.5;
+const VELOCITY_CUTOFF = 0.1;
 
 const useMomentumScroll = () => {
     const ref = useRef(null);
-    const [isDragging, setIsDragging] = useState(false);
-    const [hasMoved, setHasMoved] = useState(false);
 
     // Physics staterefs (using refs for performance/no-re-render in loop)
     const state = useRef({
-        isDown: false,
-        startX: 0,
         scrollLeft: 0,
         velocity: 0,
-        lastPageX: 0,
-        lastTime: 0,
         rafId: null
     }).current;
 
@@ -50,61 +44,6 @@ const useMomentumScroll = () => {
         state.rafId = requestAnimationFrame(step);
     }, [state, stopMomentum]);
 
-    // Mouse Events
-    const onMouseDown = (e) => {
-        stopMomentum();
-        state.isDown = true;
-        state.startX = e.pageX - ref.current.offsetLeft;
-        state.scrollLeft = ref.current.scrollLeft;
-        state.lastPageX = e.pageX;
-        state.lastTime = Date.now();
-        state.velocity = 0;
-
-        setIsDragging(true);
-        setHasMoved(false);
-    };
-
-    const onMouseLeave = () => {
-        if (state.isDown) {
-            state.isDown = false;
-            setIsDragging(false);
-            startMomentum();
-        }
-    };
-
-    const onMouseUp = () => {
-        if (!state.isDown) return;
-        state.isDown = false;
-        setIsDragging(false);
-        startMomentum();
-
-        // Short delay to reset 'hasMoved' so click handlers can check it
-        setTimeout(() => setHasMoved(false), 50);
-    };
-
-    const onMouseMove = (e) => {
-        if (!state.isDown) return;
-        e.preventDefault();
-
-        const x = e.pageX - ref.current.offsetLeft;
-        const walk = (x - state.startX) * 1;
-        ref.current.scrollLeft = state.scrollLeft - walk;
-
-        // Calculate velocity
-        const now = Date.now();
-        const dt = now - state.lastTime;
-        const dx = e.pageX - state.lastPageX;
-
-        if (dt > 0) {
-            state.velocity = dx;
-        }
-
-        state.lastPageX = e.pageX;
-        state.lastTime = now;
-
-        if (Math.abs(walk) > 5) setHasMoved(true);
-    };
-
     // Wheel Event (Horizontal Scroll)
     useEffect(() => {
         const element = ref.current;
@@ -113,7 +52,10 @@ const useMomentumScroll = () => {
         const onWheelNonPassive = (e) => {
             if (e.deltaY !== 0) {
                 e.preventDefault();
-                element.scrollLeft -= e.deltaY;
+                // Inject momentum for smooth scrolling
+                // deltaY > 0 (Scroll Down) -> velocity negative -> scrollLeft increases (View Right)
+                state.velocity -= e.deltaY * 2.0;
+                startMomentum();
             }
         };
 
@@ -126,10 +68,7 @@ const useMomentumScroll = () => {
     }, [stopMomentum]);
 
     return {
-        ref,
-        events: { onMouseDown, onMouseLeave, onMouseUp, onMouseMove },
-        isDragging,
-        hasMoved
+        ref
     };
 };
 
@@ -212,11 +151,9 @@ const Portfolio = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [selectedId, designWorks]);
 
-    // Handle Image Click (prevent opening if dragging)
+    // Handle Image Click
     const handleImageClick = (id) => {
-        if (!designScroll.hasMoved) {
-            setSelectedId(id);
-        }
+        setSelectedId(id);
     };
 
     const selectedImage = designWorks.find(w => w.id === selectedId);
@@ -246,28 +183,27 @@ const Portfolio = () => {
                             Design Portfolio
                         </h3>
                         <div className="flex items-center gap-2 text-gray-400 text-sm">
-                            <span className="animate-pulse">Drag or Scroll</span>
-                            <MdSwipe />
+                            <span className="animate-pulse">Scroll to see more</span>
+                            <MdSwipe className="rotate-90" />
                         </div>
                     </div>
 
                     <div
                         ref={designScroll.ref}
-                        {...designScroll.events}
-                        className={`flex overflow-x-auto gap-6 pb-2 snap-x no-scrollbar cursor-grab ${designScroll.isDragging ? 'cursor-grabbing snap-none' : ''}`}
+                        className="flex overflow-x-auto gap-6 pb-2 snap-x no-scrollbar"
                     >
                         {designWorks.map((work) => (
                             <motion.div
                                 key={work.id}
                                 whileHover={{ scale: 1.02 }}
-                                className="flex-none w-[300px] md:w-[400px] snap-center"
+                                className="flex-none w-[300px] md:w-[400px] snap-center cursor-pointer"
                                 onClick={() => handleImageClick(work.id)}
                             >
                                 <div className="group relative aspect-[4/3] rounded-xl overflow-hidden shadow-lg border border-white/10 select-none">
                                     <img
                                         src={work.image}
                                         alt={work.title}
-                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 pointer-events-none"
+                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                                         draggable="false"
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
@@ -291,15 +227,14 @@ const Portfolio = () => {
                             Programming Projects
                         </h3>
                         <div className="flex items-center gap-2 text-gray-400 text-sm">
-                            <span className="animate-pulse">Drag or Scroll</span>
-                            <MdSwipe />
+                            <span className="animate-pulse">Scroll to see more</span>
+                            <MdSwipe className="rotate-90" />
                         </div>
                     </div>
 
                     <div
                         ref={programmingScroll.ref}
-                        {...programmingScroll.events}
-                        className={`flex overflow-x-auto gap-6 pb-2 snap-x no-scrollbar cursor-grab ${programmingScroll.isDragging ? 'cursor-grabbing snap-none' : ''}`}
+                        className="flex overflow-x-auto gap-6 pb-2 snap-x no-scrollbar"
                     >
                         {programmingProjects.map((project, index) => (
                             <motion.div
@@ -324,7 +259,7 @@ const Portfolio = () => {
                                         href={project.link}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 text-accent font-medium hover:text-orange-400 transition-colors mt-auto w-fit pointer-events-auto"
+                                        className="inline-flex items-center gap-2 text-accent font-medium hover:text-orange-400 transition-colors mt-auto w-fit"
                                     >
                                         <FaGithub size={20} />
                                         <span>View Project</span>
