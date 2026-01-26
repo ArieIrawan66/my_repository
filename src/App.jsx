@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -17,62 +16,51 @@ import home4Bg from './assets/home4-bg.jpg';
 import home5Bg from './assets/home5-bg.jpg';
 
 function App() {
-  const location = useLocation();
   const [currentBg, setCurrentBg] = useState(home1Bg);
 
-  useEffect(() => {
-    switch (location.pathname) {
-      case '/':
-        setCurrentBg(home1Bg);
-        break;
-      case '/skills':
-        setCurrentBg(home2Bg);
-        break;
-      case '/portfolio':
-        setCurrentBg(home3Bg);
-        break;
-      case '/about':
-        setCurrentBg(home4Bg);
-        break;
-      case '/contact':
-        setCurrentBg(home5Bg);
-        break;
-      default:
-        setCurrentBg(home1Bg);
-    }
-  }, [location.pathname]);
+  const sections = [
+    { id: 'home', Component: Home, bg: home1Bg },
+    { id: 'skills', Component: Skills, bg: home2Bg },
+    { id: 'portfolio', Component: Portfolio, bg: home3Bg },
+    { id: 'about', Component: About, bg: home4Bg },
+    { id: 'contact', Component: Contact, bg: home5Bg },
+  ];
 
   return (
-    <div
-      className={`flex flex-col min-h-screen relative text-white transition-all duration-700 ease-in-out ${location.pathname === '/' ? 'md:bg-center' : 'bg-center'
-        }`}
-      style={{
-        backgroundImage: `url(${currentBg})`,
-        backgroundSize: 'cover',
-        backgroundRepeat: 'no-repeat',
-        backgroundAttachment: 'fixed',
-        backgroundPosition:
-          location.pathname === '/'
-            ? '85% center'   // smartphone
-            : 'center'
-      }}
-    >
-      {/* Global Dark Overlay */}
-      <div className="absolute inset-0 bg-black/60 z-0"></div>
+
+    <div className="flex flex-col min-h-screen relative text-white bg-black">
+      {/* Background Layer with Cross-Fade */}
+      <div className="fixed inset-0 z-0">
+        <AnimatePresence mode="popLayout">
+          <motion.div
+            key={currentBg}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.5, ease: "easeInOut" }}
+            className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat bg-fixed"
+            style={{ backgroundImage: `url(${currentBg})` }}
+          />
+        </AnimatePresence>
+        {/* Global Dark Overlay */}
+        <div className="absolute inset-0 bg-black/60 z-10"></div>
+      </div>
 
       {/* Content wrapper with z-index to sit above overlay */}
-      <div className="relative z-10 flex flex-col min-h-screen">
+      <div className="relative z-20 flex flex-col min-h-screen">
         <Navbar />
         <main className="flex-grow">
-          <AnimatePresence mode="wait">
-            <Routes location={location} key={location.pathname}>
-              <Route path="/" element={<Home />} />
-              <Route path="/skills" element={<Skills />} />
-              <Route path="/portfolio" element={<Portfolio />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-            </Routes>
-          </AnimatePresence>
+          {sections.map(({ id, Component, bg }) => (
+            <motion.div
+              key={id}
+              id={id}
+              onViewportEnter={() => setCurrentBg(bg)}
+              viewport={{ amount: 0.3, margin: "-100px" }} // Trigger when 30% visible
+              className="w-full"
+            >
+              <Component />
+            </motion.div>
+          ))}
         </main>
         <Footer />
       </div>

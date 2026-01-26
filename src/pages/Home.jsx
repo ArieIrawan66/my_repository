@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-scroll';
 import { motion } from 'framer-motion';
 
 const Home = () => {
@@ -24,14 +24,18 @@ const Home = () => {
                 </p>
                 <div className="flex gap-4">
                     <Link
-                        to="/portfolio"
-                        className="bg-accent text-white px-8 py-3 rounded-md font-medium hover:bg-orange-600 transition-colors shadow-lg"
+                        to="portfolio"
+                        smooth={true}
+                        duration={1200}
+                        className="bg-accent text-white px-8 py-3 rounded-md font-medium hover:bg-orange-600 transition-colors shadow-lg cursor-pointer"
                     >
                         View Portfolio
                     </Link>
                     <Link
-                        to="/contact"
-                        className="bg-transparent border-2 border-white text-white px-8 py-3 rounded-md font-medium hover:bg-white hover:text-gray-900 transition-colors"
+                        to="contact"
+                        smooth={true}
+                        duration={1200}
+                        className="bg-transparent border-2 border-white text-white px-8 py-3 rounded-md font-medium hover:bg-white hover:text-gray-900 transition-colors cursor-pointer"
                     >
                         Contact Me
                     </Link>
